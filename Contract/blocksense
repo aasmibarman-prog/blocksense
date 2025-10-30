@@ -1,0 +1,64 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+/**
+ * @title BlockSense
+ * @dev A simple blockchain-based project tracking system that allows 
+ * users to register projects, fund them, and check details on-chain.
+ */
+contract BlockSense {
+    struct Project {
+        uint256 id;
+        string title;
+        string description;
+        address payable owner;
+        uint256 funds;
+    }
+
+    uint256 public projectCount;
+    mapping(uint256 => Project) public projects;
+
+    event ProjectCreated(uint256 indexed id, string title, address owner);
+    event ProjectFunded(uint256 indexed id, uint256 amount, address funder);
+
+    /**
+     * @dev Create a new project
+     * @param _title Title of the project
+     * @param _description Short description of the project
+     */
+    function createProject(string memory _title, string memory _description) external {
+        projectCount++;
+        projects[projectCount] = Project({
+            id: projectCount,
+            title: _title,
+            description: _description,
+            owner: payable(msg.sender),
+            funds: 0
+        });
+        emit ProjectCreated(projectCount, _title, msg.sender);
+    }
+
+    /**
+     * @dev Fund a project with ETH
+     * @param _projectId The ID of the project to fund
+     */
+    function fundProject(uint256 _projectId) external payable {
+        require(_projectId > 0 && _projectId <= projectCount, "Invalid project ID");
+        require(msg.value > 0, "Funding must be greater than zero");
+
+        Project storage project = projects[_projectId];
+        project.funds += msg.value;
+
+        emit ProjectFunded(_projectId, msg.value, msg.sender);
+    }
+
+    /**
+     * @dev Get project details
+     * @param _projectId The ID of the project
+     * @return Project details
+     */
+    function getProject(uint256 _projectId) external view returns (Project memory) {
+        require(_projectId > 0 && _projectId <= projectCount, "Invalid project ID");
+        return projects[_projectId];
+    }
+}
